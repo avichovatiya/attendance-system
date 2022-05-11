@@ -1,31 +1,32 @@
-
 #module importing
-
 import cv2
 import numpy as np
 import face_recognition
 import os
 from datetime import datetime
-# import serial
-# import time
-#for send
-from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
-from email.mime.application import MIMEApplication
-from email.mime.multipart import MIMEMultipart
-# ----------------------
+
+#---------------------------------
+#Logic
+print("Getting your system ready... \nAdjust yourself in proper ligth.")
+# insert the data
+import mysql.connector
+mydb =mysql.connector.connect(host='localhost', port=3308, user='root', passwd='', database='attendance')
+
+sqlform = "insert into records(Name, Time, Date) VALUES (%s, %s, %s)"
+
+#---------------------------------
 #path
 path = 'photos'
 images = []
 personNames = []
 myList = os.listdir(path)
-print(myList)
+# print(myList)
 #---------------------------------
 for cu_img in myList:
     current_Img = cv2.imread(f'{path}/{cu_img}')
     images.append(current_Img)
     personNames.append(os.path.splitext(cu_img)[0])
-print(personNames)
+# print(personNames)
 #---------------------------------
 #marking attendance in database
 def markAttendance2(name, inTime, inDate):
@@ -40,6 +41,12 @@ def markAttendance2(name, inTime, inDate):
             tStr = time_now.strftime('%H:%M:%S')
             dStr = time_now.strftime('%d/%m/%Y')
             f.writelines(f'\n{name},{tStr},{dStr}')
+
+            # Entry in database
+            mycursor=mydb.cursor()
+            val = [    (name, tStr, dStr)    ]
+            mycursor.executemany(sqlform,val)
+            mydb.commit()
 #---------------------------------
 def faceEncodings(images):
     encodeList = []
@@ -51,6 +58,7 @@ def faceEncodings(images):
 
 encodeListKnown = faceEncodings(images)
 print("ALl encodings complete!!!")
+print("")
 
 cap = cv2.VideoCapture(0)
 
